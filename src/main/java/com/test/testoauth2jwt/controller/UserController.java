@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.test.testoauth2jwt.dto.UserLoginDto;
 import com.test.testoauth2jwt.po.User;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -76,6 +77,39 @@ public class UserController {
         aesCipher.init(Cipher.ENCRYPT_MODE, secKey);
         byte[] byteCipherText = aesCipher.doFinal(plainText.getBytes());
         return byteCipherText;
+    }
+
+    /**
+     * Decrypts encrypted byte array using the key used for encryption.
+     * @param byteCipherText
+     * @param secKey
+     * @return
+     * @throws Exception
+     */
+    public String decryptText(byte[] byteCipherText, SecretKey secKey) throws Exception {
+        // AES defaults to AES/ECB/PKCS5Padding in Java 7
+        Cipher aesCipher = Cipher.getInstance("AES");
+        aesCipher.init(Cipher.DECRYPT_MODE, secKey);
+        byte[] bytePlainText = aesCipher.doFinal(byteCipherText);
+        return new String(bytePlainText);
+    }
+
+    @GetMapping("/synhello")
+    public String synhello(String token,String name) throws Exception {
+        //由于+号在url传输的时候会自动转换成空格所以需要转换一下  +属于非法字符
+        token = token.replaceAll(" ","+");
+        byte[] decode = Base64.getDecoder().decode(token);
+        String s = decryptText(decode, key);
+        return s;
+    }
+
+    @GetMapping("/synhello2")
+    public String synhello2(String token,@RequestAttribute String username) throws Exception {
+        //由于+号在url传输的时候会自动转换成空格所以需要转换一下  +属于非法字符
+        token = token.replaceAll(" ","+");
+        byte[] decode = Base64.getDecoder().decode(token);
+        String s = decryptText(decode, key);
+        return s;
     }
 
 }
