@@ -2,6 +2,10 @@ package com.test.testoauth2jwt.controller;
 
 
 import com.alibaba.fastjson.JSON;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.test.testoauth2jwt.dto.UserLoginDto;
 import com.test.testoauth2jwt.po.User;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +17,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.util.Base64;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/user")
@@ -43,12 +48,26 @@ public class UserController {
 
         String s = JSON.toJSONString(user);
 
-        byte[] bytes = encryptText(s, key);
+        //对称
+//        byte[] bytes = encryptText(s, key);
+//
+//
+//        String s1 = Base64.getEncoder().encodeToString(bytes);
 
+        //JWT
+        Date date = new Date();
+        long time = date.getTime();
+        Long expiresat = time+7200*1000;
 
-        String s1 = Base64.getEncoder().encodeToString(bytes);
+        Algorithm algorithm = Algorithm.HMAC256("slwsec");//秘钥  可以自己填
+        String token = JWT.create()
+                .withIssuer("slwsrv")//签发者
+                .withSubject("slw")//用户名  userID  都可以
+                .withIssuedAt(new Date())//签发时间
+                .withExpiresAt(new Date(expiresat))//到期时间
+                .sign(algorithm);
 
-        return s1;
+        return token;
     }
 
     /**
@@ -95,12 +114,20 @@ public class UserController {
     }
 
     @GetMapping("/synhello")
-    public String synhello(String token,String name) throws Exception {
+    public DecodedJWT synhello(String token, String name) throws Exception {
         //由于+号在url传输的时候会自动转换成空格所以需要转换一下  +属于非法字符
         token = token.replaceAll(" ","+");
-        byte[] decode = Base64.getDecoder().decode(token);
-        String s = decryptText(decode, key);
-        return s;
+        //对称
+//        byte[] decode = Base64.getDecoder().decode(token);
+//        String s = decryptText(decode, key);
+
+        //JWT
+        Algorithm algorithm = Algorithm.HMAC256("slwsec");
+        JWTVerifier verifier = JWT.require(algorithm)
+                .withIssuer("slwsrv")
+                .build(); //Reusable verifier instance
+        DecodedJWT jwt = verifier.verify(token);
+        return jwt;
     }
 
     @GetMapping("/synhello2")
