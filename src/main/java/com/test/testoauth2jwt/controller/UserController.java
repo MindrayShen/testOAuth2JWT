@@ -29,6 +29,10 @@ public class UserController {
         key = getSecretEncryptionKey();
     }
 
+    public SecretKey getKey() {
+        return key;
+    }
+
     @GetMapping("/login")
     public String login(UserLoginDto userLoginDto) throws Exception {
         String username = userLoginDto.getUsername();
@@ -58,7 +62,6 @@ public class UserController {
         Date date = new Date();
         long time = date.getTime();
         Long expiresat = time+7200*1000;
-
         Algorithm algorithm = Algorithm.HMAC256("slwsec");//秘钥  可以自己填
         String token = JWT.create()
                 .withIssuer("slwsrv")//签发者
@@ -66,8 +69,8 @@ public class UserController {
                 .withIssuedAt(new Date())//签发时间
                 .withExpiresAt(new Date(expiresat))//到期时间
                 .sign(algorithm);
-
-        return token;
+        String s1 = Base64.getEncoder().encodeToString(token.getBytes());
+        return s1;
     }
 
     /**
@@ -130,13 +133,10 @@ public class UserController {
         return jwt;
     }
 
-    @GetMapping("/synhello2")
-    public String synhello2(String token,@RequestAttribute String username) throws Exception {
-        //由于+号在url传输的时候会自动转换成空格所以需要转换一下  +属于非法字符
-        token = token.replaceAll(" ","+");
-        byte[] decode = Base64.getDecoder().decode(token);
-        String s = decryptText(decode, key);
-        return s;
+    @GetMapping("/synhello2")//RequestAttribute 后面可以写key值  如果不写默认变量名称
+    public String synhello2(@RequestAttribute String username) throws Exception {
+
+        return username;
     }
 
 }
